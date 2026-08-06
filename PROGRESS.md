@@ -18,6 +18,13 @@
 - 当前是浏览器可点击原型，使用内存中的演示任务；刷新页面会恢复初始数据。
 - `black-white-components/` 只是用户的开发素材库，不属于 OneStep 产品模块；需要的 Button、Input、Textarea、Badge 已复制到应用自己的 `src/components/ui/`，素材库保持只读。
 
+## 版本控制与远程备份
+
+- 2026-08-06 已在工作区根目录建立 Git 仓库，默认分支为 `main`。
+- 私有远程仓库：`https://github.com/YU11YU123/onestep`。
+- 远程范围仅包含项目文档与 `onestep-app/` 源码、配置和测试脚本。
+- `.tools/`、`.obsidian/`、`black-white-components/`、`node_modules/`、`dist/` 和生成的界面截图均不上传。
+
 ## 已完成的产品框架
 
 - 左侧：收集箱、今天、未来、以后、已完成、四象限和项目。
