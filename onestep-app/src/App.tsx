@@ -1273,15 +1273,32 @@ function QuickCapture({ onClose, onSave }: { onClose: () => void; onSave: (title
 function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => void; onApply: (steps: string[]) => void }) {
   const [stage, setStage] = useState<"scope" | "loading" | "result">("scope")
   const [useMemory, setUseMemory] = useState(true)
-  const result = [
+  const [feedback, setFeedback] = useState("")
+  const [appliedFeedback, setAppliedFeedback] = useState("")
+  const [isRefining, setIsRefining] = useState(false)
+  const baseResult = [
     task.title.includes("周报") ? "打开上周周报模板，复制一份并改成今天的日期" : `打开与“${task.title}”有关的材料，先放到同一个窗口里`,
     "写下这件事最终要交付的一个结果",
     "只处理最容易确认的一小部分",
   ]
+  const feedbackSummary = appliedFeedback.length > 28 ? `${appliedFeedback.slice(0, 28)}…` : appliedFeedback
+  const result = appliedFeedback
+    ? [
+        `针对“${feedbackSummary}”，先把任务缩小成一个 5 分钟内能验证的动作`,
+        "确认反馈里最影响开始的一个限制",
+        "完成最小动作后，再决定是否继续原计划",
+      ]
+    : baseResult
 
-  const run = () => {
+  const run = (feedbackText = "") => {
+    const trimmedFeedback = feedbackText.trim()
+    setIsRefining(Boolean(trimmedFeedback))
+    setAppliedFeedback(trimmedFeedback)
     setStage("loading")
-    window.setTimeout(() => setStage("result"), 900)
+    window.setTimeout(() => {
+      setStage("result")
+      if (trimmedFeedback) setFeedback("")
+    }, 900)
   }
 
   return (
@@ -1290,7 +1307,7 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
         <div className="ai-icon large"><Brain /></div>
         <div>
           <div className="eyebrow">AI 第一步 · 演示</div>
-          <h2>{stage === "result" ? "先从这一小步开始" : "让任务变得容易启动"}</h2>
+          <h2>{stage === "result" ? "先从这一小步开始" : isRefining ? "根据你的反馈重新拆解" : "让任务变得容易启动"}</h2>
           <p>{task.title}</p>
         </div>
         <button onClick={onClose} aria-label="关闭"><X /></button>
@@ -1309,7 +1326,7 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
           <p className="privacy-note">这是界面演示，不会真的上传任何内容。接入 DeepSeek 后，每次都会先显示发送范围。</p>
           <div className="modal-actions">
             <Button variant="ghost" onClick={onClose}>暂时不用</Button>
-            <Button onClick={run}><Sparkles /> 开始拆解</Button>
+            <Button onClick={() => run()}><Sparkles /> 开始拆解</Button>
           </div>
         </div>
       )}
@@ -1317,13 +1334,19 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
       {stage === "loading" && (
         <div className="ai-loading">
           <div className="thinking-orbit"><Sparkles /></div>
-          <h3>正在找最小的启动动作</h3>
-          <p>不是把任务拆得更复杂，而是找到你现在就能做的第一步。</p>
+          <h3>{isRefining ? "正在根据反馈重新拆解" : "正在找最小的启动动作"}</h3>
+          <p>{isRefining ? "会保留原任务，只调整建议的第一步和后续顺序。" : "不是把任务拆得更复杂，而是找到你现在就能做的第一步。"}</p>
         </div>
       )}
 
       {stage === "result" && (
         <div className="ai-result">
+          {appliedFeedback && (
+            <div className="feedback-applied">
+              <RotateCcw />
+              <span><strong>已根据你的反馈重新拆解</strong><small>{appliedFeedback}</small></span>
+            </div>
+          )}
           <div className="first-step-card">
             <span>建议第一步 · 约 5 分钟</span>
             <h3>{result[0]}</h3>
@@ -1333,8 +1356,29 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
             <span>后面再做</span>
             {result.slice(1).map((step, index) => <p key={step}><i>{index + 2}</i>{step}</p>)}
           </div>
+          <div className="ai-feedback">
+            <label htmlFor="ai-feedback-input">结果不合适？告诉 AI 哪里需要调整</label>
+            <Textarea
+              id="ai-feedback-input"
+              aria-label="给 AI 的调整反馈"
+              value={feedback}
+              placeholder="例如：这一步还是太大，我想先从收集资料开始"
+              onChange={(event) => setFeedback(event.target.value)}
+            />
+            <div>
+              <span>只会重新生成建议，不会修改原任务。</span>
+              <Button variant="outline" disabled={!feedback.trim()} onClick={() => run(feedback)}>
+                <RotateCcw /> 根据反馈重新拆解
+              </Button>
+            </div>
+          </div>
           <div className="modal-actions split">
-            <Button variant="outline" onClick={() => setStage("scope")}><RotateCcw /> 重新拆</Button>
+            <Button variant="outline" onClick={() => {
+              setAppliedFeedback("")
+              setFeedback("")
+              setIsRefining(false)
+              setStage("scope")
+            }}><RotateCcw /> 返回发送范围</Button>
             <Button onClick={() => onApply(result)}><Check /> 采用这个第一步</Button>
           </div>
         </div>
