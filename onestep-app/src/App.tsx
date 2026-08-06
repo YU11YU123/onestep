@@ -1106,7 +1106,7 @@ function TaskDetail({
         <textarea
           aria-label="任务标题"
           value={task.title}
-          rows={2}
+          rows={1}
           onChange={(event) => onChange({ title: event.target.value })}
         />
       </div>

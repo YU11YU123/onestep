@@ -238,6 +238,12 @@ await send("Runtime.evaluate", {
 })
 const aiFeedbackScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-ai-feedback.png", import.meta.url), Buffer.from(aiFeedbackScreenshot.data, "base64"))
+await send("Runtime.evaluate", {
+  expression: `[...document.querySelectorAll("button")].find((button) => button.textContent.includes("采用这个第一步"))?.click()`,
+})
+await new Promise((resolve) => setTimeout(resolve, 120))
+const detailRhythmScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-detail-rhythm.png", import.meta.url), Buffer.from(detailRhythmScreenshot.data, "base64"))
 socket.close()
 
 if (failed.length > 0) {
