@@ -1208,7 +1208,7 @@ function QuickCapture({ onClose, onSave }: { onClose: () => void; onSave: (title
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Modal onClose={onClose} wide>
       <div className="capture-modal">
         <div className="modal-heading compact">
           <div className="capture-mark"><Command /></div>

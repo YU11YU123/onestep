@@ -44,6 +44,14 @@ await send("Page.reload", { ignoreCache: true })
 await new Promise((resolve) => setTimeout(resolve, 500))
 const screenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-main.png", import.meta.url), Buffer.from(screenshot.data, "base64"))
+await send("Runtime.evaluate", {
+  expression: '[...document.querySelectorAll(".nav-item")].find((button) => button.textContent.includes("收集箱"))?.click()',
+})
+await new Promise((resolve) => setTimeout(resolve, 160))
+const inboxScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-inbox.png", import.meta.url), Buffer.from(inboxScreenshot.data, "base64"))
+await send("Page.reload", { ignoreCache: true })
+await new Promise((resolve) => setTimeout(resolve, 400))
 const evaluation = await send("Runtime.evaluate", {
   awaitPromise: true,
   returnByValue: true,
@@ -174,6 +182,14 @@ await send("Runtime.evaluate", { expression: 'document.querySelector(".detail-cl
 await new Promise((resolve) => setTimeout(resolve, 220))
 const collapsedScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-detail-collapsed.png", import.meta.url), Buffer.from(collapsedScreenshot.data, "base64"))
+await send("Page.reload", { ignoreCache: true })
+await new Promise((resolve) => setTimeout(resolve, 400))
+await send("Runtime.evaluate", {
+  expression: '[...document.querySelectorAll(".nav-item")].find((button) => button.textContent.includes("四象限"))?.click()',
+})
+await new Promise((resolve) => setTimeout(resolve, 160))
+const quadrantScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-quadrants.png", import.meta.url), Buffer.from(quadrantScreenshot.data, "base64"))
 await send("Page.reload", { ignoreCache: true })
 await new Promise((resolve) => setTimeout(resolve, 400))
 await send("Runtime.evaluate", {
