@@ -402,7 +402,14 @@ function App() {
         <TaskDetail
           task={selectedTask}
           projects={projectList}
-          onChange={(patch) => selectedTask && updateTask(selectedTask.id, patch)}
+          onChange={(patch) => {
+            if (!selectedTask) return
+            updateTask(selectedTask.id, patch)
+            if (patch.bucket === "inbox" && patch.important === null && patch.urgent === null) {
+              setActiveView("inbox")
+              setToast("已取消象限选择，任务回到收集箱")
+            }
+          }}
           onOpenAi={() => setAiOpen(true)}
           onClose={() => setDetailOpen(false)}
           onRestore={() => {
@@ -1147,14 +1154,24 @@ function TaskDetail({
             <button
               key={item.key}
               className={quadrantOf(task) === item.key ? `active q-select-${item.key}` : ""}
-              onClick={() => onChange({ important: item.important, urgent: item.urgent })}
+              onClick={() => {
+                if (quadrantOf(task) === item.key) {
+                  onChange({ important: null, urgent: null, bucket: "inbox", plannedDate: "" })
+                  return
+                }
+                onChange({ important: item.important, urgent: item.urgent })
+              }}
             >
               <span className={`quadrant-pin q-${item.key}`} />
               {quadrantMeta[item.key].label}
             </button>
           ))}
         </div>
-        {quadrantOf(task) === "unclassified" && <p className="helper-text">还没判断，不会自动算成“不紧急不重要”。</p>}
+        <p className="helper-text">
+          {quadrantOf(task) === "unclassified"
+            ? "还没判断，不会自动算成“不紧急不重要”。"
+            : "再次点击已选象限可取消，并把任务退回收集箱。"}
+        </p>
       </section>
 
       <section className="detail-section notes-section">

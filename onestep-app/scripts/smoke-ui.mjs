@@ -99,6 +99,10 @@ const evaluation = await send("Runtime.evaluate", {
     await wait(80);
     result.customProjectApplied = document.querySelectorAll(".picker-trigger")[1]?.textContent.includes("招聘推进");
 
+    document.querySelector(".quadrant-selector button.active")?.click();
+    await wait(100);
+    result.quadrantDeselected = document.querySelector(".workspace-header h1")?.textContent === "收集箱" && !document.querySelector(".quadrant-selector button.active") && document.body.innerText.includes("已取消象限选择，任务回到收集箱");
+
     [...document.querySelectorAll(".nav-item")].find((button) => button.textContent.includes("已完成"))?.click();
     await wait(100);
     result.completedViewOpened = Boolean(document.querySelector(".inline-restore")) && document.body.innerText.includes("提交本周考勤确认");
