@@ -1,5 +1,6 @@
 import {
   Archive,
+  ArrowLeft,
   ArrowRight,
   Bell,
   Brain,
@@ -206,6 +207,7 @@ function App() {
   const [plannerOpen, setPlannerOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(true)
   const [toast, setToast] = useState("")
+  const [aiUndo, setAiUndo] = useState<{ taskId: number; previousSteps: string[] } | null>(null)
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -411,6 +413,12 @@ function App() {
             }
           }}
           onOpenAi={() => setAiOpen(true)}
+          onUndoAi={aiUndo?.taskId === selectedTask?.id ? () => {
+            if (!aiUndo) return
+            updateTask(aiUndo.taskId, { steps: aiUndo.previousSteps })
+            setAiUndo(null)
+            setToast("已撤销 AI 拆解")
+          } : undefined}
           onClose={() => setDetailOpen(false)}
           onRestore={() => {
             if (!selectedTask) return
@@ -434,9 +442,10 @@ function App() {
           task={selectedTask}
           onClose={() => setAiOpen(false)}
           onApply={(steps) => {
+            setAiUndo({ taskId: selectedTask.id, previousSteps: [...selectedTask.steps] })
             updateTask(selectedTask.id, { steps })
             setAiOpen(false)
-            setToast("第一步已经放进任务")
+            setToast("已采用第一步，可在任务中撤销")
           }}
         />
       )}
@@ -1060,6 +1069,7 @@ function TaskDetail({
   projects,
   onChange,
   onOpenAi,
+  onUndoAi,
   onClose,
   onRestore,
 }: {
@@ -1067,6 +1077,7 @@ function TaskDetail({
   projects: Array<{ name: string; color: string }>
   onChange: (patch: Partial<Task>) => void
   onOpenAi: () => void
+  onUndoAi?: () => void
   onClose: () => void
   onRestore: () => void
 }) {
@@ -1128,7 +1139,10 @@ function TaskDetail({
 
       {task.steps.length > 0 && !task.completed && (
         <section className="steps-card">
-          <div className="field-label"><ListTodo /> 当前第一步</div>
+          <div className="steps-heading">
+            <div className="field-label"><ListTodo /> 当前第一步</div>
+            {onUndoAi && <button type="button" aria-label="撤销 AI 拆解" onClick={onUndoAi}><RotateCcw /> 撤销</button>}
+          </div>
           {task.steps.map((step, index) => (
             <div className={index === 0 ? "step-item first" : "step-item"} key={step}>
               <span>{index + 1}</span>
@@ -1325,8 +1339,8 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
           </button>
           <p className="privacy-note">这是界面演示，不会真的上传任何内容。接入 DeepSeek 后，每次都会先显示发送范围。</p>
           <div className="modal-actions">
-            <Button variant="ghost" onClick={onClose}>暂时不用</Button>
-            <Button onClick={() => run()}><Sparkles /> 开始拆解</Button>
+            <Button variant="ghost" onClick={onClose}>取消</Button>
+            <Button aria-label="开始拆解" onClick={() => run()}><Sparkles /> 拆解</Button>
           </div>
         </div>
       )}
@@ -1367,8 +1381,8 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
             />
             <div>
               <span>只会重新生成建议，不会修改原任务。</span>
-              <Button variant="outline" disabled={!feedback.trim()} onClick={() => run(feedback)}>
-                <RotateCcw /> 根据反馈重新拆解
+              <Button variant="outline" aria-label="根据反馈重新拆解" disabled={!feedback.trim()} onClick={() => run(feedback)}>
+                <RotateCcw /> 重拆
               </Button>
             </div>
           </div>
@@ -1378,8 +1392,8 @@ function AiBreakdown({ task, onClose, onApply }: { task: Task; onClose: () => vo
               setFeedback("")
               setIsRefining(false)
               setStage("scope")
-            }}><RotateCcw /> 返回发送范围</Button>
-            <Button onClick={() => onApply(result)}><Check /> 采用这个第一步</Button>
+            }}><ArrowLeft /> 上一步</Button>
+            <Button aria-label="采用这个第一步" onClick={() => onApply(result)}><Check /> 采用</Button>
           </div>
         </div>
       )}

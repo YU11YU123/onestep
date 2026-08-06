@@ -149,19 +149,22 @@ const evaluation = await send("Runtime.evaluate", {
     document.querySelector(".ai-entry")?.click();
     await wait(80);
     result.aiScopeOpened = document.body.innerText.includes("让任务变得容易启动") && document.body.innerText.includes("本次会发送");
-    [...document.querySelectorAll("button")].find((button) => button.textContent.includes("开始拆解"))?.click();
+    document.querySelector('button[aria-label="开始拆解"]')?.click();
     await wait(1100);
-    result.aiResultShown = document.body.innerText.includes("先从这一小步开始") && document.body.innerText.includes("采用这个第一步");
+    result.aiResultShown = document.body.innerText.includes("先从这一小步开始") && Boolean(document.querySelector('button[aria-label="采用这个第一步"]'));
     const feedbackInput = document.querySelector('textarea[aria-label="给 AI 的调整反馈"]');
     setter.call(feedbackInput, "第一步还是太大，我想先从收集资料开始");
     feedbackInput.dispatchEvent(new Event("input", { bubbles: true }));
     await wait(80);
-    [...document.querySelectorAll("button")].find((button) => button.textContent.includes("根据反馈重新拆解"))?.click();
+    document.querySelector('button[aria-label="根据反馈重新拆解"]')?.click();
     await wait(1100);
     result.aiFeedbackApplied = document.body.innerText.includes("已根据你的反馈重新拆解") && document.body.innerText.includes("第一步还是太大，我想先从收集资料开始");
-    [...document.querySelectorAll("button")].find((button) => button.textContent.includes("采用这个第一步"))?.click();
+    document.querySelector('button[aria-label="采用这个第一步"]')?.click();
     await wait(100);
     result.aiApplied = document.body.innerText.includes("当前第一步");
+    document.querySelector('button[aria-label="撤销 AI 拆解"]')?.click();
+    await wait(100);
+    result.aiUndoApplied = document.body.innerText.includes("已撤销 AI 拆解") && !document.body.innerText.includes("当前第一步");
 
     [...document.querySelectorAll("button")].find((button) => button.textContent.trim() === "安排明天")?.click();
     await wait(80);
@@ -225,21 +228,21 @@ await send("Runtime.evaluate", {
     const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     document.querySelector(".ai-entry")?.click();
     await wait(100);
-    [...document.querySelectorAll("button")].find((button) => button.textContent.includes("开始拆解"))?.click();
+    document.querySelector('button[aria-label="开始拆解"]')?.click();
     await wait(1050);
     const input = document.querySelector('textarea[aria-label="给 AI 的调整反馈"]');
     const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
     setter.call(input, "第一步还是太大，我想先从收集资料开始");
     input.dispatchEvent(new Event("input", { bubbles: true }));
     await wait(80);
-    [...document.querySelectorAll("button")].find((button) => button.textContent.includes("根据反馈重新拆解"))?.click();
+    document.querySelector('button[aria-label="根据反馈重新拆解"]')?.click();
     await wait(1050);
   })()`,
 })
 const aiFeedbackScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-ai-feedback.png", import.meta.url), Buffer.from(aiFeedbackScreenshot.data, "base64"))
 await send("Runtime.evaluate", {
-  expression: `[...document.querySelectorAll("button")].find((button) => button.textContent.includes("采用这个第一步"))?.click()`,
+  expression: `document.querySelector('button[aria-label="采用这个第一步"]')?.click()`,
 })
 await new Promise((resolve) => setTimeout(resolve, 120))
 const detailRhythmScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
