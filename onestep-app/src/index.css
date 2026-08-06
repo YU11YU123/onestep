@@ -246,12 +246,12 @@ button[data-slot="button"].bg-primary { color: #fff; }
 .step-item.first span { background: #282827; color: #fff; }
 
 .quadrant-board { display: grid; max-width: 900px; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 auto; }
-.quadrant-card { min-height: 220px; border: 1px solid #dfdfda; border-radius: 13px; background: rgb(255 255 255 / .72); padding: 18px; }
+.quadrant-card { min-height: 220px; border: 1px solid #dfdfda; border-radius: 13px; background: rgb(255 255 255 / .72); padding: 22px 18px 18px; }
 .quadrant-card header, .quadrant-card header > div { display: flex; align-items: center; justify-content: space-between; }
 .quadrant-card header > div { gap: 9px; justify-content: flex-start; }
 .quadrant-card h2 { margin: 0; font-size: 15px; font-weight: 650; line-height: 1.35; }
 .quadrant-card header [data-slot="badge"] { min-height: 27px; padding-inline: 10px; font-size: 12px; }
-.quadrant-tasks { display: grid; gap: 6px; margin-top: 8px; }
+.quadrant-tasks { display: grid; gap: 2px; margin-top: 8px; }
 .quadrant-task { display: flex; min-height: 38px; align-items: center; gap: 10px; border: 0; border-radius: 8px; background: transparent; padding: 9px 10px; cursor: pointer; font-size: 13px; line-height: 1.4; text-align: left; }
 .quadrant-task:hover, .quadrant-task.selected { background: #f0f0ed; }
 .mini-check { display: grid; width: 17px; height: 17px; flex: 0 0 17px; place-items: center; border: 1px solid #c9c9c3; border-radius: 50%; }
