@@ -104,9 +104,9 @@ button[data-slot="button"].bg-primary { color: #fff; }
 
 .workspace { min-width: 0; overflow-y: auto; padding: 38px clamp(28px, 4vw, 62px) 60px; }
 .workspace-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; max-width: 900px; margin: 0 auto 28px; }
-.workspace-header > div:first-child { display: grid; gap: 6px; }
+.workspace-header > div:first-child { display: grid; gap: 3px; }
 .eyebrow { color: #8d8d87; font-size: 10px; font-weight: 650; line-height: 1.4; letter-spacing: .12em; text-transform: uppercase; }
-.workspace-header h1 { margin: 0; font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 31px; font-weight: 600; line-height: 1.2; letter-spacing: -.02em; }
+.workspace-header h1 { margin: 0; font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif; font-size: 31px; font-weight: 600; line-height: 1.15; letter-spacing: -.02em; }
 .workspace-header p { margin: 0; color: #84847e; font-size: 13px; line-height: 1.45; }
 .header-actions { display: flex; gap: 8px; }
 .header-actions button { height: 36px; padding-inline: 12px; }
@@ -251,7 +251,7 @@ button[data-slot="button"].bg-primary { color: #fff; }
 .quadrant-card header > div { gap: 9px; justify-content: flex-start; }
 .quadrant-card h2 { margin: 0; font-size: 15px; font-weight: 650; line-height: 1.35; }
 .quadrant-card header [data-slot="badge"] { min-height: 27px; padding-inline: 10px; font-size: 12px; }
-.quadrant-tasks { display: grid; gap: 6px; margin-top: 17px; }
+.quadrant-tasks { display: grid; gap: 6px; margin-top: 8px; }
 .quadrant-task { display: flex; min-height: 38px; align-items: center; gap: 10px; border: 0; border-radius: 8px; background: transparent; padding: 9px 10px; cursor: pointer; font-size: 13px; line-height: 1.4; text-align: left; }
 .quadrant-task:hover, .quadrant-task.selected { background: #f0f0ed; }
 .mini-check { display: grid; width: 17px; height: 17px; flex: 0 0 17px; place-items: center; border: 1px solid #c9c9c3; border-radius: 50%; }
@@ -263,7 +263,9 @@ button[data-slot="button"].bg-primary { color: #fff; }
 .modal { width: min(580px, 92vw); overflow: hidden; border: 1px solid rgb(255 255 255 / .55); border-radius: 17px; background: #fff; box-shadow: 0 32px 90px rgb(0 0 0 / .22); animation: modal-in .2s ease; }
 .modal.wide { width: min(680px, 92vw); }
 .modal-heading { display: flex; align-items: flex-start; gap: 13px; padding: 24px 24px 18px; }
-.modal-heading.compact { align-items: center; gap: 14px; padding: 26px 28px 12px; }
+.capture-modal { position: relative; }
+.modal-heading.compact { align-items: center; gap: 14px; padding: 26px 54px 12px 28px; }
+.capture-modal .modal-heading.compact > button { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; }
 .modal-heading.compact h2 { margin: 0 0 4px; font-size: 21px; line-height: 1.3; }
 .modal-heading.compact p { font-size: 12px; line-height: 1.5; }
 .modal-heading > div:nth-child(2) { min-width: 0; flex: 1; }
