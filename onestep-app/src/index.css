@@ -275,8 +275,9 @@ button[data-slot="button"].bg-primary { color: #fff; }
 .capture-modal > textarea::placeholder { color: #9f9f99; }
 .capture-footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; border-top: 1px solid #ededE9; background: #f8f8f6; padding: 14px 20px 14px 28px; color: #74746e; font-size: 12px; }
 .capture-footer > span, .capture-footer > div, .capture-footer > span { display: flex; align-items: center; gap: 7px; }
+.capture-footer > span { font-size: 14px; }
 .capture-footer svg { width: 14px; }
-.capture-footer > div > span { margin-right: 5px; }
+.capture-footer > div > span { margin-right: 5px; font-size: 12px; }
 .capture-footer kbd { border: 1px solid #d9d9d3; border-radius: 5px; background: #fff; padding: 2px 5px; font-size: 12px; }
 .capture-footer button[data-slot="button"] { height: 42px; border-radius: 10px; padding-inline: 18px; font-size: 14px; font-weight: 650; }
 .capture-footer button[data-slot="button"] svg { width: 15px; }
