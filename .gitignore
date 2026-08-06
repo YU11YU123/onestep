@@ -1,0 +1,28 @@
+# Local tools and editor state
+.tools/
+.obsidian/
+
+# Independent component reference library (not part of OneStep)
+black-white-components/
+
+# Node dependencies and generated builds
+onestep-app/node_modules/
+onestep-app/dist/
+
+# Generated UI screenshots
+onestep-app/artifacts/*
+!onestep-app/artifacts/.gitkeep
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+onestep-app/.env
+onestep-app/.env.*
+!onestep-app/.env.example
+
+# Logs and operating-system residue
+*.log
+npm-debug.log*
+Thumbs.db
+.DS_Store
