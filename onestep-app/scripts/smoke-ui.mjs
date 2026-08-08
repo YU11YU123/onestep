@@ -145,7 +145,13 @@ const evaluation = await send("Runtime.evaluate", {
     result.completedViewOpened = Boolean(document.querySelector(".inline-restore")) && document.body.innerText.includes("提交本周考勤确认");
     document.querySelector(".inline-restore")?.click();
     await wait(100);
-    result.completedRestored = document.querySelector(".workspace-header h1")?.textContent === "今天" && document.body.innerText.includes("提交本周考勤确认");
+    result.completedRestored = document.querySelector(".workspace-header h1")?.textContent === "已完成"
+      && !document.body.innerText.includes("提交本周考勤确认")
+      && document.body.innerText.includes("已恢复到今天");
+    [...document.querySelectorAll(".nav-item")].find((button) => button.textContent.includes("今天"))?.click();
+    await wait(80);
+    document.querySelector(".task-row")?.click();
+    await wait(80);
 
     document.querySelector(".sidebar-label button")?.click();
     await wait(60);
@@ -210,7 +216,13 @@ const evaluation = await send("Runtime.evaluate", {
   })()`,
 })
 
-const result = evaluation.result.value
+if (evaluation.exceptionDetails || evaluation.result?.subtype === "error") {
+  throw new Error(`交互脚本执行异常：${evaluation.exceptionDetails?.text ?? evaluation.result?.description ?? "未知错误"}`)
+}
+const result = evaluation.result?.value
+if (!result || Object.keys(result).length === 0) {
+  throw new Error("交互脚本没有返回检查结果")
+}
 console.log(JSON.stringify(result, null, 2))
 const failed = Object.entries(result).filter(([, value]) => value !== true)
 

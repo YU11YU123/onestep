@@ -284,8 +284,8 @@ function App() {
   const toggleTask = (task: Task) => {
     if (task.completed) {
       updateTask(task.id, { completed: false })
-      setActiveView(task.bucket)
       setSelectedId(task.id)
+      if (activeView === "completed") setDetailOpen(false)
       setToast(`已恢复到${task.plannedDate || "原来的列表"}`)
       return
     }
