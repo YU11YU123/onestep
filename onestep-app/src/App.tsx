@@ -37,11 +37,13 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 
 type ViewKey =
@@ -55,6 +57,23 @@ type ViewKey =
 
 type Bucket = "inbox" | "today" | "upcoming" | "someday"
 type RepeatRule = "once" | "daily"
+type AiProvider = "deepseek" | "openai-compatible" | "custom"
+
+type AiApiConfig = {
+  provider: AiProvider
+  endpoint: string
+  model: string
+  apiKey: string
+}
+
+type ShortcutConfig = {
+  ctrl: boolean
+  alt: boolean
+  shift: boolean
+  meta: boolean
+  code: string
+  label: string
+}
 
 type Task = {
   id: number
@@ -226,17 +245,32 @@ function App() {
   const [detailOpen, setDetailOpen] = useState(true)
   const [toast, setToast] = useState("")
   const [aiUndo, setAiUndo] = useState<{ taskId: number; previousSteps: string[] } | null>(null)
+  const [captureShortcut, setCaptureShortcut] = useState<ShortcutConfig>({
+    ctrl: true,
+    alt: true,
+    shift: false,
+    meta: false,
+    code: "Space",
+    label: "Ctrl + Alt + Space",
+  })
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.altKey && event.code === "Space") {
+      if (event.target instanceof Element && event.target.closest('[data-shortcut-recorder="true"]')) return
+      if (
+        event.ctrlKey === captureShortcut.ctrl
+        && event.altKey === captureShortcut.alt
+        && event.shiftKey === captureShortcut.shift
+        && event.metaKey === captureShortcut.meta
+        && event.code === captureShortcut.code
+      ) {
         event.preventDefault()
         setCaptureOpen(true)
       }
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [])
+  }, [captureShortcut])
 
   useEffect(() => {
     if (!toast) return
@@ -360,6 +394,8 @@ function App() {
         activeProject={activeProject}
         projects={projectList}
         counts={counts}
+        captureShortcut={captureShortcut}
+        onShortcutChange={setCaptureShortcut}
         onSelectView={selectView}
         onSelectProject={(project) => {
           setActiveProject(project)
@@ -504,6 +540,8 @@ function Sidebar({
   activeProject,
   projects,
   counts,
+  captureShortcut,
+  onShortcutChange,
   onSelectView,
   onSelectProject,
   onAddProject,
@@ -513,6 +551,8 @@ function Sidebar({
   activeProject: string
   projects: Array<{ name: string; color: string }>
   counts: Record<"inbox" | "today" | "upcoming" | "someday" | "completed", number>
+  captureShortcut: ShortcutConfig
+  onShortcutChange: (shortcut: ShortcutConfig) => void
   onSelectView: (view: ViewKey) => void
   onSelectProject: (project: string) => void
   onAddProject: (project: string) => void
@@ -524,7 +564,15 @@ function Sidebar({
   const [renameValue, setRenameValue] = useState("")
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [apiSettingsOpen, setApiSettingsOpen] = useState(false)
+  const [apiConfig, setApiConfig] = useState<AiApiConfig>({
+    provider: "deepseek",
+    endpoint: "",
+    model: "",
+    apiKey: "",
+  })
   const profileMenuRef = useRef<HTMLDivElement>(null)
+  const apiConfigured = Boolean(apiConfig.endpoint && apiConfig.model && apiConfig.apiKey)
   const navItems: Array<{
     key: Exclude<ViewKey, "project">
     label: string
@@ -680,11 +728,19 @@ function Sidebar({
                   <span><strong>设置</strong><small>偏好、快捷键与数据</small></span>
                   <ChevronRight />
                 </button>
-                <div className="usage-summary">
-                  <div><Gauge /><strong>剩余用量</strong><span>尚未接入</span></div>
-                  <p>真实 AI 尚未启用，目前没有调用额度或费用。</p>
-                </div>
-                <div className="profile-menu-meta"><Command /><span>快捷记录</span><kbd>Ctrl Alt Space</kbd></div>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="usage-summary"
+                  aria-label="配置 AI 接口"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    setApiSettingsOpen(true)
+                  }}
+                >
+                  <div><Gauge /><strong>剩余用量</strong><span>{apiConfigured ? "已配置" : "尚未接入"}</span><ChevronRight /></div>
+                  <p>点击配置供应商、请求地址和密钥。</p>
+                </button>
                 <div className="profile-menu-meta"><Info /><span>关于 OneStep</span><small>v0.1.0</small></div>
               </div>
             )}
@@ -705,7 +761,23 @@ function Sidebar({
           </div>
         </div>
       </aside>
-      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {settingsOpen && (
+        <SettingsModal
+          onClose={() => setSettingsOpen(false)}
+          captureShortcut={captureShortcut}
+          onShortcutChange={onShortcutChange}
+        />
+      )}
+      {apiSettingsOpen && (
+        <ApiSettingsModal
+          config={apiConfig}
+          onClose={() => setApiSettingsOpen(false)}
+          onSave={(nextConfig) => {
+            setApiConfig(nextConfig)
+            setApiSettingsOpen(false)
+          }}
+        />
+      )}
     </>
   )
 }
@@ -1518,7 +1590,61 @@ function Modal({ children, onClose, wide = false }: { children: ReactNode; onClo
   )
 }
 
-function SettingsModal({ onClose }: { onClose: () => void }) {
+function SettingsModal({
+  onClose,
+  captureShortcut,
+  onShortcutChange,
+}: {
+  onClose: () => void
+  captureShortcut: ShortcutConfig
+  onShortcutChange: (shortcut: ShortcutConfig) => void
+}) {
+  const [recordingShortcut, setRecordingShortcut] = useState(false)
+  const shortcutRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (recordingShortcut) shortcutRef.current?.focus()
+  }, [recordingShortcut])
+
+  const recordShortcut = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (event.key === "Escape") {
+      setRecordingShortcut(false)
+      shortcutRef.current?.blur()
+      return
+    }
+    if (["Control", "Alt", "Shift", "Meta"].includes(event.key)) return
+    if (!event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) return
+
+    const keyLabel = event.code === "Space"
+      ? "Space"
+      : event.code.startsWith("Key")
+        ? event.code.slice(3)
+        : event.code.startsWith("Digit")
+          ? event.code.slice(5)
+          : event.key.length === 1
+            ? event.key.toUpperCase()
+            : event.key
+    const parts = [
+      event.ctrlKey ? "Ctrl" : "",
+      event.altKey ? "Alt" : "",
+      event.shiftKey ? "Shift" : "",
+      event.metaKey ? "Win" : "",
+      keyLabel,
+    ].filter(Boolean)
+    onShortcutChange({
+      ctrl: event.ctrlKey,
+      alt: event.altKey,
+      shift: event.shiftKey,
+      meta: event.metaKey,
+      code: event.code,
+      label: parts.join(" + "),
+    })
+    setRecordingShortcut(false)
+    shortcutRef.current?.blur()
+  }
+
   return (
     <Modal onClose={onClose}>
       <div className="settings-modal">
@@ -1532,15 +1658,23 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
           <button type="button" aria-label="关闭设置" onClick={onClose}><X /></button>
         </div>
         <div className="settings-list">
-          <div className="settings-row">
+          <div
+            className={recordingShortcut ? "settings-row actionable shortcut-recording" : "settings-row actionable"}
+            onClick={() => shortcutRef.current?.focus()}
+          >
             <Command />
-            <span><strong>快捷记录</strong><small>浏览器获得焦点时可模拟</small></span>
-            <kbd>Ctrl Alt Space</kbd>
-          </div>
-          <div className="settings-row">
-            <Gauge />
-            <span><strong>剩余用量</strong><small>真实 AI 尚未接入，没有实际调用或费用</small></span>
-            <em>尚未接入</em>
+            <span><strong>快捷记录</strong><small>{recordingShortcut ? "请按新的组合键，Esc 取消" : "点击输入框后按新的组合键"}</small></span>
+            <input
+              ref={shortcutRef}
+              className="shortcut-input"
+              aria-label="快捷记录组合键"
+              data-shortcut-recorder={recordingShortcut ? "true" : undefined}
+              readOnly
+              value={recordingShortcut ? "" : captureShortcut.label}
+              onFocus={() => setRecordingShortcut(true)}
+              onBlur={() => setRecordingShortcut(false)}
+              onKeyDown={recordShortcut}
+            />
           </div>
           <div className="settings-row">
             <Sparkles />
@@ -1551,6 +1685,104 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             <Archive />
             <span><strong>本地数据</strong><small>当前仍为演示数据，刷新后恢复初始内容</small></span>
             <em>演示</em>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+function ApiSettingsModal({
+  config,
+  onClose,
+  onSave,
+}: {
+  config: AiApiConfig
+  onClose: () => void
+  onSave: (config: AiApiConfig) => void
+}) {
+  const [draft, setDraft] = useState(config)
+  const providers: Array<{ value: AiProvider; label: string }> = [
+    { value: "deepseek", label: "DeepSeek" },
+    { value: "openai-compatible", label: "OpenAI 兼容" },
+    { value: "custom", label: "自定义" },
+  ]
+  const canSave = Boolean(draft.endpoint.trim() && draft.model.trim() && draft.apiKey.trim())
+
+  return (
+    <Modal onClose={onClose}>
+      <div className="settings-modal api-settings-modal">
+        <div className="settings-heading">
+          <div className="settings-mark"><Brain /></div>
+          <div>
+            <span>仅保存在本次原型会话</span>
+            <h2>AI 接口</h2>
+            <p>先配置接口结构；当前不会测试连接或发起真实请求。</p>
+          </div>
+          <button type="button" aria-label="关闭 AI 接口设置" onClick={onClose}><X /></button>
+        </div>
+
+        <div className="api-settings-form">
+          <fieldset className="api-provider-field">
+            <legend>供应商</legend>
+            <div className="provider-options">
+              {providers.map((provider) => (
+                <button
+                  key={provider.value}
+                  type="button"
+                  className={draft.provider === provider.value ? "active" : ""}
+                  aria-pressed={draft.provider === provider.value}
+                  onClick={() => setDraft((current) => ({ ...current, provider: provider.value }))}
+                >
+                  {provider.label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <label className="api-field">
+            <span>请求地址</span>
+            <Input
+              aria-label="AI 请求地址"
+              inputMode="url"
+              placeholder="输入兼容接口的完整请求地址"
+              value={draft.endpoint}
+              onChange={(event) => setDraft((current) => ({ ...current, endpoint: event.target.value }))}
+            />
+          </label>
+          <label className="api-field">
+            <span>模型名称</span>
+            <Input
+              aria-label="AI 模型名称"
+              placeholder="输入供应商提供的模型名称"
+              value={draft.model}
+              onChange={(event) => setDraft((current) => ({ ...current, model: event.target.value }))}
+            />
+          </label>
+          <label className="api-field">
+            <span>API Key</span>
+            <Input
+              aria-label="AI API Key"
+              type="password"
+              autoComplete="off"
+              placeholder="仅在当前页面内存中暂存"
+              value={draft.apiKey}
+              onChange={(event) => setDraft((current) => ({ ...current, apiKey: event.target.value }))}
+            />
+          </label>
+
+          <div className="api-security-note">
+            <Info />
+            <p><strong>当前是 UX 演示</strong><span>刷新页面后配置会清空；正式版必须使用 Windows 受保护凭据保存 Key。</span></p>
+          </div>
+          <div className="api-settings-actions">
+            <Button variant="ghost" onClick={onClose}>取消</Button>
+            <Button aria-label="保存 AI 接口配置" disabled={!canSave} onClick={() => onSave({
+              provider: draft.provider,
+              endpoint: draft.endpoint.trim(),
+              model: draft.model.trim(),
+              apiKey: draft.apiKey.trim(),
+            })}>保存配置</Button>
           </div>
         </div>
       </div>

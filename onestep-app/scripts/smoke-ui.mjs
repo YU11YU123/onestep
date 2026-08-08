@@ -67,10 +67,58 @@ const evaluation = await send("Runtime.evaluate", {
     document.querySelector('button[aria-label="打开账户菜单"]')?.click();
     await wait(80);
     result.profileMenuOpened = Boolean(document.querySelector('.profile-menu')) && document.body.innerText.includes("剩余用量") && document.body.innerText.includes("尚未接入");
+    document.querySelector('button[aria-label="配置 AI 接口"]')?.click();
+    await wait(80);
+    result.apiSettingsOpened = Boolean(document.querySelector('.api-settings-modal'))
+      && document.body.innerText.includes("供应商")
+      && document.body.innerText.includes("请求地址")
+      && document.body.innerText.includes("API Key");
+    [...document.querySelectorAll('.provider-options button')].find((button) => button.textContent.includes("自定义"))?.click();
+    const apiInputSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+    const apiValues = [
+      ['input[aria-label="AI 请求地址"]', "https://example.invalid/v1"],
+      ['input[aria-label="AI 模型名称"]', "demo-model"],
+      ['input[aria-label="AI API Key"]', "sk-test-not-sent"],
+    ];
+    for (const [selector, value] of apiValues) {
+      const input = document.querySelector(selector);
+      apiInputSetter.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    await wait(80);
+    document.querySelector('button[aria-label="保存 AI 接口配置"]')?.click();
+    await wait(80);
+    document.querySelector('button[aria-label="打开账户菜单"]')?.click();
+    await wait(80);
+    result.apiSettingsSaved = Boolean(document.querySelector('.profile-menu'))
+      && document.querySelector('.usage-summary')?.textContent.includes("已配置");
     [...document.querySelectorAll('.profile-menu button')].find((button) => button.textContent.includes("设置"))?.click();
     await wait(80);
     result.settingsModalOpened = Boolean(document.querySelector('.settings-modal')) && document.body.innerText.includes("快捷记录") && document.body.innerText.includes("本地数据");
+    const shortcutButton = document.querySelector('input[aria-label="快捷记录组合键"]');
+    shortcutButton?.click();
+    await wait(60);
+    shortcutButton?.dispatchEvent(new KeyboardEvent("keydown", {
+      key: "k",
+      code: "KeyK",
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+    }));
+    await wait(80);
+    result.shortcutCustomized = shortcutButton?.value.includes("Ctrl + Shift + K");
     document.querySelector('button[aria-label="关闭设置"]')?.click();
+    await wait(80);
+    window.dispatchEvent(new KeyboardEvent("keydown", {
+      key: "k",
+      code: "KeyK",
+      ctrlKey: true,
+      shiftKey: true,
+      bubbles: true,
+    }));
+    await wait(80);
+    result.customShortcutOpened = Boolean(document.querySelector('.capture-modal'));
+    document.querySelector('.capture-modal button[aria-label="关闭"]')?.click();
     await wait(80);
 
     document.querySelector(".detail-close")?.click();
@@ -255,8 +303,16 @@ await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[ar
 await new Promise((resolve) => setTimeout(resolve, 120))
 const profileMenuScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-profile-menu.png", import.meta.url), Buffer.from(profileMenuScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="配置 AI 接口"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
+const apiSettingsScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-api-settings.png", import.meta.url), Buffer.from(apiSettingsScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="关闭 AI 接口设置"]\')?.click(); document.querySelector(\'button[aria-label="打开账户菜单"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
 await send("Runtime.evaluate", { expression: '[...document.querySelectorAll(".profile-menu button")].find((button) => button.textContent.includes("设置"))?.click()' })
 await new Promise((resolve) => setTimeout(resolve, 120))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'input[aria-label="快捷记录组合键"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 80))
 const settingsScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-settings.png", import.meta.url), Buffer.from(settingsScreenshot.data, "base64"))
 await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="关闭设置"]\')?.click()' })
