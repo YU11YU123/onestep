@@ -62,6 +62,16 @@ const evaluation = await send("Runtime.evaluate", {
     const primaryAction = [...document.querySelectorAll("button")].find((button) => button.textContent.includes("记下一件事"));
     result.primaryActionVisible = Boolean(primaryAction && getComputedStyle(primaryAction).color === "rgb(255, 255, 255)");
     result.sidebarDuplicateRemoved = !document.body.innerText.includes("快速记录");
+    result.detailPlaceholderMenuRemoved = !document.querySelector('button[aria-label="更多操作"]');
+
+    document.querySelector('button[aria-label="打开账户菜单"]')?.click();
+    await wait(80);
+    result.profileMenuOpened = Boolean(document.querySelector('.profile-menu')) && document.body.innerText.includes("剩余用量") && document.body.innerText.includes("尚未接入");
+    [...document.querySelectorAll('.profile-menu button')].find((button) => button.textContent.includes("设置"))?.click();
+    await wait(80);
+    result.settingsModalOpened = Boolean(document.querySelector('.settings-modal')) && document.body.innerText.includes("快捷记录") && document.body.innerText.includes("本地数据");
+    document.querySelector('button[aria-label="关闭设置"]')?.click();
+    await wait(80);
 
     document.querySelector(".detail-close")?.click();
     await wait(80);
@@ -80,24 +90,45 @@ const evaluation = await send("Runtime.evaluate", {
     await wait(100);
     result.customPlannedDateApplied = document.querySelector(".schedule-trigger")?.textContent.includes("8 月 12 日") && !document.querySelector(".schedule-menu");
 
-    document.querySelectorAll(".picker-trigger")[0]?.click();
+    document.querySelector('button[aria-label="设置截止时间"]')?.click();
     await wait(80);
-    result.reminderWheelOpened = Boolean(document.querySelector(".wheel-popover")) && document.body.innerText.includes("选择提醒时间");
-    const wheels = document.querySelectorAll(".wheel-column");
-    [...wheels[0].querySelectorAll("button")].find((button) => button.textContent.trim() === "明天")?.click();
-    [...wheels[1].querySelectorAll("button")].find((button) => button.textContent.trim() === "09")?.click();
-    [...wheels[2].querySelectorAll("button")].find((button) => button.textContent.trim() === "15")?.click();
-    await wait(180);
-    document.querySelector(".wheel-popover button[data-slot='button']")?.click();
+    result.deadlinePickerOpened = Boolean(document.querySelector(".datetime-picker:not(.align-right) .wheel-popover")) && document.body.innerText.includes("设置截止时间");
+    const deadlinePicker = document.querySelector(".datetime-picker:not(.align-right)");
+    deadlinePicker.querySelector('button[aria-label="截止时间日期 2026-08-15"]')?.click();
+    const deadlineWheels = deadlinePicker.querySelectorAll(".wheel-column");
+    [...deadlineWheels[0].querySelectorAll("button")].find((button) => button.textContent.trim() === "18")?.click();
+    [...deadlineWheels[1].querySelectorAll("button")].find((button) => button.textContent.trim() === "37")?.click();
+    await wait(120);
+    deadlinePicker.querySelector(".wheel-popover button[data-slot='button']")?.click();
     await wait(80);
-    result.reminderWheelApplied = document.querySelectorAll(".picker-trigger")[0]?.textContent.includes("明天 09:15");
+    result.deadlineApplied = document.querySelector('button[aria-label="设置截止时间"]')?.textContent.includes("2026/08/15 18:37");
 
-    document.querySelectorAll(".picker-trigger")[1]?.click();
+    document.querySelector('button[aria-label="设置提醒时间"]')?.click();
     await wait(80);
-    result.customProjectOpened = Boolean(document.querySelector(".project-menu")) && !document.querySelector(".detail-panel select");
-    [...document.querySelectorAll(".project-menu button")].find((button) => button.textContent.includes("招聘推进"))?.click();
+    result.reminderPickerOpened = Boolean(document.querySelector(".datetime-picker.align-right .wheel-popover")) && document.body.innerText.includes("设置提醒时间");
+    const reminderPicker = document.querySelector(".datetime-picker.align-right");
+    reminderPicker.querySelector('button[aria-label="提醒时间日期 2026-08-15"]')?.click();
+    const reminderWheels = reminderPicker.querySelectorAll(".wheel-column");
+    [...reminderWheels[0].querySelectorAll("button")].find((button) => button.textContent.trim() === "17")?.click();
+    [...reminderWheels[1].querySelectorAll("button")].find((button) => button.textContent.trim() === "11")?.click();
+    await wait(120);
+    reminderPicker.querySelector(".wheel-popover button[data-slot='button']")?.click();
     await wait(80);
-    result.customProjectApplied = document.querySelectorAll(".picker-trigger")[1]?.textContent.includes("招聘推进");
+    result.reminderApplied = document.querySelector('button[aria-label="设置提醒时间"]')?.textContent.includes("2026/08/15 17:11");
+
+    document.querySelector('button[aria-label="设置项目"]')?.click();
+    await wait(80);
+    result.customProjectOpened = Boolean(document.querySelector(".project-picker .project-menu")) && !document.querySelector(".detail-panel select");
+    [...document.querySelectorAll(".project-picker .project-menu button")].find((button) => button.textContent.includes("招聘推进"))?.click();
+    await wait(80);
+    result.customProjectApplied = document.querySelector('button[aria-label="设置项目"]')?.textContent.includes("招聘推进");
+
+    document.querySelector('button[aria-label="设置重复方式"]')?.click();
+    await wait(80);
+    result.repeatPickerOpened = Boolean(document.querySelector(".repeat-menu")) && document.body.innerText.includes("每天重复");
+    [...document.querySelectorAll(".repeat-menu button")].find((button) => button.textContent.includes("每天重复"))?.click();
+    await wait(80);
+    result.repeatApplied = document.querySelector('button[aria-label="设置重复方式"]')?.textContent.includes("每天重复");
 
     document.querySelector(".quadrant-selector button.active")?.click();
     await wait(100);
@@ -184,14 +215,31 @@ await new Promise((resolve) => setTimeout(resolve, 120))
 const plannedDateScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-planned-date-picker.png", import.meta.url), Buffer.from(plannedDateScreenshot.data, "base64"))
 await send("Runtime.evaluate", { expression: 'document.querySelector(".schedule-trigger")?.click()' })
-await send("Runtime.evaluate", { expression: 'document.querySelectorAll(".picker-trigger")[0]?.click()' })
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="设置截止时间"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
+const deadlineScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-deadline-picker.png", import.meta.url), Buffer.from(deadlineScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="设置截止时间"]\')?.click(); document.querySelector(\'button[aria-label="设置提醒时间"]\')?.click()' })
 await new Promise((resolve) => setTimeout(resolve, 120))
 const reminderScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-reminder-wheel.png", import.meta.url), Buffer.from(reminderScreenshot.data, "base64"))
-await send("Runtime.evaluate", { expression: 'document.querySelectorAll(".picker-trigger")[0]?.click(); document.querySelectorAll(".picker-trigger")[1]?.click()' })
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="设置提醒时间"]\')?.click(); document.querySelector(\'button[aria-label="设置项目"]\')?.click()' })
 await new Promise((resolve) => setTimeout(resolve, 120))
 const projectScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-project-picker.png", import.meta.url), Buffer.from(projectScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="设置项目"]\')?.click(); document.querySelector(\'button[aria-label="设置重复方式"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
+const repeatScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-repeat-picker.png", import.meta.url), Buffer.from(repeatScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="设置重复方式"]\')?.click(); document.querySelector(\'button[aria-label="打开账户菜单"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
+const profileMenuScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-profile-menu.png", import.meta.url), Buffer.from(profileMenuScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: '[...document.querySelectorAll(".profile-menu button")].find((button) => button.textContent.includes("设置"))?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
+const settingsScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
+writeFileSync(new URL("../artifacts/onestep-settings.png", import.meta.url), Buffer.from(settingsScreenshot.data, "base64"))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="关闭设置"]\')?.click()' })
 await send("Runtime.evaluate", { expression: 'document.querySelector(".detail-close")?.click()' })
 await new Promise((resolve) => setTimeout(resolve, 220))
 const collapsedScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })

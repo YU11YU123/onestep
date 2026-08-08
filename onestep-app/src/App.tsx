@@ -9,13 +9,16 @@ import {
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Circle,
   Clock,
   Command,
   Folder,
+  Gauge,
   Grid2X2,
   Image,
+  Info,
   Inbox,
   ListTodo,
   MoreHorizontal,
@@ -51,6 +54,7 @@ type ViewKey =
   | "project"
 
 type Bucket = "inbox" | "today" | "upcoming" | "someday"
+type RepeatRule = "once" | "daily"
 
 type Task = {
   id: number
@@ -60,6 +64,8 @@ type Task = {
   project: string
   plannedDate: string
   dueLabel: string
+  reminderLabel: string
+  repeatRule: RepeatRule
   important: boolean | null
   urgent: boolean | null
   completed: boolean
@@ -83,7 +89,9 @@ const initialTasks: Task[] = [
     bucket: "inbox",
     project: "工作事务",
     plannedDate: "",
-    dueLabel: "今天 16:30",
+    dueLabel: "2026-08-08 16:30",
+    reminderLabel: "2026-08-08 16:00",
+    repeatRule: "once",
     important: null,
     urgent: null,
     completed: false,
@@ -97,7 +105,9 @@ const initialTasks: Task[] = [
     bucket: "today",
     project: "工作事务",
     plannedDate: "今天",
-    dueLabel: "今天 17:30",
+    dueLabel: "2026-08-08 17:30",
+    reminderLabel: "2026-08-08 16:45",
+    repeatRule: "once",
     important: true,
     urgent: true,
     completed: false,
@@ -111,7 +121,9 @@ const initialTasks: Task[] = [
     bucket: "today",
     project: "招聘推进",
     plannedDate: "今天",
-    dueLabel: "明天 10:00",
+    dueLabel: "2026-08-09 10:00",
+    reminderLabel: "2026-08-09 09:30",
+    repeatRule: "once",
     important: false,
     urgent: true,
     completed: false,
@@ -125,7 +137,9 @@ const initialTasks: Task[] = [
     bucket: "upcoming",
     project: "工作事务",
     plannedDate: "明天",
-    dueLabel: "周五 14:00",
+    dueLabel: "2026-08-14 14:00",
+    reminderLabel: "2026-08-14 13:30",
+    repeatRule: "once",
     important: true,
     urgent: false,
     completed: false,
@@ -140,6 +154,8 @@ const initialTasks: Task[] = [
     project: "个人生活",
     plannedDate: "以后",
     dueLabel: "",
+    reminderLabel: "",
+    repeatRule: "daily",
     important: true,
     urgent: false,
     completed: false,
@@ -153,7 +169,9 @@ const initialTasks: Task[] = [
     bucket: "today",
     project: "工作事务",
     plannedDate: "今天",
-    dueLabel: "已完成 09:20",
+    dueLabel: "2026-08-08 09:20",
+    reminderLabel: "",
+    repeatRule: "once",
     important: false,
     urgent: false,
     completed: true,
@@ -313,6 +331,8 @@ function App() {
       project: projectList[0]?.name ?? "未分类项目",
       plannedDate: "",
       dueLabel: "",
+      reminderLabel: "",
+      repeatRule: "once",
       important: null,
       urgent: null,
       completed: false,
@@ -502,6 +522,9 @@ function Sidebar({
   const [newProjectName, setNewProjectName] = useState("")
   const [renamingProject, setRenamingProject] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState("")
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const profileMenuRef = useRef<HTMLDivElement>(null)
   const navItems: Array<{
     key: Exclude<ViewKey, "project">
     label: string
@@ -516,8 +539,24 @@ function Sidebar({
     { key: "quadrants", label: "四象限", icon: <Grid2X2 /> },
   ]
 
+  useEffect(() => {
+    const closeMenu = (event: MouseEvent) => {
+      if (!profileMenuRef.current?.contains(event.target as Node)) setProfileMenuOpen(false)
+    }
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setProfileMenuOpen(false)
+    }
+    window.addEventListener("mousedown", closeMenu)
+    window.addEventListener("keydown", closeOnEscape)
+    return () => {
+      window.removeEventListener("mousedown", closeMenu)
+      window.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [])
+
   return (
-    <aside className="sidebar">
+    <>
+      <aside className="sidebar">
       <div className="brand">
         <div className="brand-mark">1</div>
         <div>
@@ -625,21 +664,49 @@ function Sidebar({
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <button>
-          <Settings />
-          设置
-        </button>
-        <div className="profile">
-          <div className="avatar">左</div>
-          <div>
-            <strong>左仕榆</strong>
-            <span>本地模式</span>
+        <div className="sidebar-footer">
+          <div className="profile-shell" ref={profileMenuRef}>
+            {profileMenuOpen && (
+              <div className="profile-menu" role="menu" aria-label="账户菜单">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    setProfileMenuOpen(false)
+                    setSettingsOpen(true)
+                  }}
+                >
+                  <Settings />
+                  <span><strong>设置</strong><small>偏好、快捷键与数据</small></span>
+                  <ChevronRight />
+                </button>
+                <div className="usage-summary">
+                  <div><Gauge /><strong>剩余用量</strong><span>尚未接入</span></div>
+                  <p>真实 AI 尚未启用，目前没有调用额度或费用。</p>
+                </div>
+                <div className="profile-menu-meta"><Command /><span>快捷记录</span><kbd>Ctrl Alt Space</kbd></div>
+                <div className="profile-menu-meta"><Info /><span>关于 OneStep</span><small>v0.1.0</small></div>
+              </div>
+            )}
+            <div className="profile">
+              <div className="avatar">左</div>
+              <div>
+                <strong>左仕榆</strong>
+                <span>本地模式</span>
+              </div>
+              <button
+                type="button"
+                className={profileMenuOpen ? "profile-menu-trigger active" : "profile-menu-trigger"}
+                aria-label="打开账户菜单"
+                aria-expanded={profileMenuOpen}
+                onClick={() => setProfileMenuOpen((open) => !open)}
+              ><MoreHorizontal /></button>
+            </div>
           </div>
-          <MoreHorizontal />
         </div>
-      </div>
-    </aside>
+      </aside>
+      {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+    </>
   )
 }
 
@@ -745,8 +812,8 @@ function TaskRow({
         </div>
         <div className="task-meta">
           {task.dueLabel && (
-            <span className={task.dueLabel.includes("今天") ? "due" : ""}>
-              <Clock /> {task.dueLabel}
+            <span className={task.dueLabel.startsWith(todayDateValue()) ? "due" : ""}>
+              <Clock /> {formatDateTimeDisplay(task.dueLabel)}
             </span>
           )}
           <span><Folder /> {task.project}</span>
@@ -827,9 +894,121 @@ function QuadrantBoard({
   )
 }
 
-const reminderDayOptions = ["今天", "明天", "周五", "周六", "8 月 9 日"]
 const reminderHourOptions = Array.from({ length: 24 }, (_, index) => index.toString().padStart(2, "0"))
-const reminderMinuteOptions = Array.from({ length: 12 }, (_, index) => (index * 5).toString().padStart(2, "0"))
+const reminderMinuteOptions = Array.from({ length: 60 }, (_, index) => index.toString().padStart(2, "0"))
+
+function todayDateValue() {
+  const now = new Date()
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
+  return local.toISOString().slice(0, 10)
+}
+
+function parseDateTimeValue(value: string) {
+  const match = value.match(/^(\d{4}-\d{2}-\d{2})\s(\d{2}):(\d{2})$/)
+  return {
+    date: match?.[1] ?? todayDateValue(),
+    hour: match?.[2] ?? "09",
+    minute: match?.[3] ?? "00",
+  }
+}
+
+function formatDateTimeDisplay(value: string) {
+  const parsed = parseDateTimeValue(value)
+  if (!value) return ""
+  return `${parsed.date.replaceAll("-", "/")} ${parsed.hour}:${parsed.minute}`
+}
+
+function dateFromValue(value: string) {
+  const [year, month, day] = value.split("-").map(Number)
+  return new Date(year, month - 1, day, 12)
+}
+
+function dateToValue(date: Date) {
+  const year = date.getFullYear()
+  const month = (date.getMonth() + 1).toString().padStart(2, "0")
+  const day = date.getDate().toString().padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+function MonthCalendar({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  const selectedDate = dateFromValue(value || todayDateValue())
+  const [viewMonth, setViewMonth] = useState(
+    () => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1, 12),
+  )
+  const today = todayDateValue()
+
+  const days = useMemo(() => {
+    const mondayOffset = (viewMonth.getDay() + 6) % 7
+    const firstCell = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1 - mondayOffset, 12)
+    return Array.from({ length: 42 }, (_, index) => {
+      const date = new Date(firstCell)
+      date.setDate(firstCell.getDate() + index)
+      return {
+        value: dateToValue(date),
+        day: date.getDate(),
+        outside: date.getMonth() !== viewMonth.getMonth(),
+      }
+    })
+  }, [viewMonth])
+
+  const moveMonth = (offset: number) => {
+    setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1, 12))
+  }
+
+  return (
+    <div className="month-calendar" aria-label={`${label}日历`}>
+      <div className="calendar-toolbar">
+        <button aria-label={`${label}上个月`} onClick={() => moveMonth(-1)}><ChevronLeft /></button>
+        <strong>{viewMonth.getFullYear()} 年 {viewMonth.getMonth() + 1} 月</strong>
+        <button aria-label={`${label}下个月`} onClick={() => moveMonth(1)}><ChevronRight /></button>
+      </div>
+      <div className="calendar-weekdays" aria-hidden="true">
+        {['一', '二', '三', '四', '五', '六', '日'].map((weekday) => <span key={weekday}>{weekday}</span>)}
+      </div>
+      <div className="calendar-days">
+        {days.map((item) => (
+          <button
+            key={item.value}
+            aria-label={`${label}日期 ${item.value}`}
+            aria-pressed={item.value === value}
+            className={[
+              item.value === value ? "selected" : "",
+              item.value === today ? "today" : "",
+              item.outside ? "outside" : "",
+            ].filter(Boolean).join(" ")}
+            onClick={() => {
+              onChange(item.value)
+              if (item.outside) {
+                const next = dateFromValue(item.value)
+                setViewMonth(new Date(next.getFullYear(), next.getMonth(), 1, 12))
+              }
+            }}
+          >
+            {item.day}
+          </button>
+        ))}
+      </div>
+      <button
+        className="calendar-today"
+        onClick={() => {
+          const next = dateFromValue(today)
+          onChange(today)
+          setViewMonth(new Date(next.getFullYear(), next.getMonth(), 1, 12))
+        }}
+      >
+        回到今天
+      </button>
+    </div>
+  )
+}
 
 function WheelColumn({
   label,
@@ -882,12 +1061,30 @@ function WheelColumn({
   )
 }
 
-function ReminderWheel({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+function DateTimeWheel({
+  label,
+  icon,
+  value,
+  placeholder,
+  heading,
+  previewVerb,
+  alignRight = false,
+  onChange,
+}: {
+  label: string
+  icon: ReactNode
+  value: string
+  placeholder: string
+  heading: string
+  previewVerb: string
+  alignRight?: boolean
+  onChange: (value: string) => void
+}) {
   const [open, setOpen] = useState(false)
-  const parsed = value.match(/^(今天|明天|周五|周六|8 月 9 日)\s(\d{1,2}):(\d{2})/)
-  const [day, setDay] = useState(parsed?.[1] ?? "今天")
-  const [hour, setHour] = useState(parsed?.[2]?.padStart(2, "0") ?? "16")
-  const [minute, setMinute] = useState(parsed?.[3] ?? "30")
+  const parsed = parseDateTimeValue(value)
+  const [date, setDate] = useState(parsed.date)
+  const [hour, setHour] = useState(parsed.hour)
+  const [minute, setMinute] = useState(parsed.minute)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -899,25 +1096,82 @@ function ReminderWheel({ value, onChange }: { value: string; onChange: (value: s
   }, [])
 
   return (
-    <div className="picker-field" ref={rootRef}>
-      <span className="field-label"><Bell /> 提醒</span>
-      <button className={open ? "picker-trigger active" : "picker-trigger"} onClick={() => setOpen((current) => !current)}>
-        <span>{value || "添加提醒时间"}</span>
+    <div className={alignRight ? "picker-field datetime-picker align-right" : "picker-field datetime-picker"} ref={rootRef}>
+      <span className="field-label">{icon} {label}</span>
+      <button
+        aria-label={`设置${label}`}
+        className={open ? "picker-trigger active" : "picker-trigger"}
+        onClick={() => {
+          if (!open) {
+            const next = parseDateTimeValue(value)
+            setDate(next.date)
+            setHour(next.hour)
+            setMinute(next.minute)
+          }
+          setOpen((current) => !current)
+        }}
+      >
+        <span>{value ? formatDateTimeDisplay(value) : placeholder}</span>
         <ChevronDown />
       </button>
       {open && (
         <div className="wheel-popover">
           <div className="picker-heading">
-            <div><Clock /><strong>选择提醒时间</strong></div>
+            <div><Clock /><strong>{heading}</strong></div>
             <button onClick={() => { onChange(""); setOpen(false) }}>清除</button>
           </div>
-          <div className="wheel-grid">
-            <WheelColumn label="日期" options={reminderDayOptions} value={day} onChange={setDay} />
+          <MonthCalendar label={label} value={date} onChange={setDate} />
+          <div className="wheel-grid time-only">
             <WheelColumn label="小时" options={reminderHourOptions} value={hour} onChange={setHour} />
             <WheelColumn label="分钟" options={reminderMinuteOptions} value={minute} onChange={setMinute} />
           </div>
-          <div className="picker-preview">将在 <strong>{day} {hour}:{minute}</strong> 提醒</div>
-          <Button size="sm" onClick={() => { onChange(`${day} ${hour}:${minute}`); setOpen(false) }}>确认时间</Button>
+          <div className="picker-preview">{previewVerb} <strong>{date.replaceAll("-", "/")} {hour}:{minute}</strong></div>
+          <Button size="sm" disabled={!date} onClick={() => { onChange(`${date} ${hour}:${minute}`); setOpen(false) }}>确认时间</Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RepeatPicker({ value, onChange }: { value: RepeatRule; onChange: (value: RepeatRule) => void }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const options: Array<{ value: RepeatRule; label: string; hint: string }> = [
+    { value: "once", label: "一次性", hint: "完成后不再生成" },
+    { value: "daily", label: "每天重复", hint: "每天生成同一动作" },
+  ]
+  const selected = options.find((option) => option.value === value) ?? options[0]
+
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener("mousedown", close)
+    return () => document.removeEventListener("mousedown", close)
+  }, [])
+
+  return (
+    <div className="picker-field repeat-picker" ref={rootRef}>
+      <span className="field-label"><RotateCcw /> 重复</span>
+      <button aria-label="设置重复方式" className={open ? "picker-trigger active" : "picker-trigger"} onClick={() => setOpen((current) => !current)}>
+        <span>{selected.label}</span>
+        <ChevronDown />
+      </button>
+      {open && (
+        <div className="project-menu repeat-menu">
+          {options.map((option) => (
+            <button
+              key={option.value}
+              className={option.value === value ? "selected" : ""}
+              onClick={() => {
+                onChange(option.value)
+                setOpen(false)
+              }}
+            >
+              <span><strong>{option.label}</strong><small>{option.hint}</small></span>
+              {option.value === value && <Check />}
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -1038,7 +1292,7 @@ function ProjectPicker({
   return (
     <div className="picker-field project-picker" ref={rootRef}>
       <span className="field-label"><Folder /> 项目</span>
-      <button className={open ? "picker-trigger active" : "picker-trigger"} onClick={() => setOpen((current) => !current)}>
+      <button aria-label="设置项目" className={open ? "picker-trigger active" : "picker-trigger"} onClick={() => setOpen((current) => !current)}>
         <span>{value}</span>
         <ChevronDown />
       </button>
@@ -1102,7 +1356,6 @@ function TaskDetail({
       <div className="detail-topline">
         <span>任务详情</span>
         <div>
-          <button aria-label="更多操作"><MoreHorizontal /></button>
           <button className="detail-close" aria-label="关闭任务详情" onClick={onClose}><X /></button>
         </div>
       </div>
@@ -1157,8 +1410,30 @@ function TaskDetail({
       </section>
 
       <section className="detail-section detail-grid">
-        <ReminderWheel value={task.dueLabel} onChange={(dueLabel) => onChange({ dueLabel })} />
+        <DateTimeWheel
+          label="截止时间"
+          icon={<CalendarDays />}
+          value={task.dueLabel}
+          placeholder="添加截止时间"
+          heading="设置截止时间"
+          previewVerb="最晚完成："
+          onChange={(dueLabel) => onChange({ dueLabel })}
+        />
+        <DateTimeWheel
+          label="提醒时间"
+          icon={<Bell />}
+          value={task.reminderLabel}
+          placeholder="添加提醒时间"
+          heading="设置提醒时间"
+          previewVerb="将在"
+          alignRight
+          onChange={(reminderLabel) => onChange({ reminderLabel })}
+        />
+      </section>
+
+      <section className="detail-section detail-grid">
         <ProjectPicker value={task.project} projects={projects} onChange={(project) => onChange({ project })} />
+        <RepeatPicker value={task.repeatRule} onChange={(repeatRule) => onChange({ repeatRule })} />
       </section>
 
       <section className="detail-section">
@@ -1219,6 +1494,46 @@ function Modal({ children, onClose, wide = false }: { children: ReactNode; onClo
         {children}
       </div>
     </div>
+  )
+}
+
+function SettingsModal({ onClose }: { onClose: () => void }) {
+  return (
+    <Modal onClose={onClose}>
+      <div className="settings-modal">
+        <div className="settings-heading">
+          <div className="settings-mark"><Settings /></div>
+          <div>
+            <span>本地原型</span>
+            <h2>设置</h2>
+            <p>先验证设置入口和信息层级，真实配置会在对应开发阶段接入。</p>
+          </div>
+          <button type="button" aria-label="关闭设置" onClick={onClose}><X /></button>
+        </div>
+        <div className="settings-list">
+          <div className="settings-row">
+            <Command />
+            <span><strong>快捷记录</strong><small>浏览器获得焦点时可模拟</small></span>
+            <kbd>Ctrl Alt Space</kbd>
+          </div>
+          <div className="settings-row">
+            <Gauge />
+            <span><strong>剩余用量</strong><small>真实 AI 尚未接入，没有实际调用或费用</small></span>
+            <em>尚未接入</em>
+          </div>
+          <div className="settings-row">
+            <Sparkles />
+            <span><strong>界面动效</strong><small>将在下一轮统一实现，并跟随系统减少动态效果</small></span>
+            <em>待实现</em>
+          </div>
+          <div className="settings-row">
+            <Archive />
+            <span><strong>本地数据</strong><small>当前仍为演示数据，刷新后恢复初始内容</small></span>
+            <em>演示</em>
+          </div>
+        </div>
+      </div>
+    </Modal>
   )
 }
 
