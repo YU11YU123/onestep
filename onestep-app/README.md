@@ -2,6 +2,8 @@
 
 这是独立于 `black-white-components` 的 OneStep 应用项目。当前只验证界面和操作顺序，使用演示数据，不连接数据库、Windows 系统能力或真实 DeepSeek API。
 
+截至 2026-08-08，32 项界面与交互反馈已实现。下一项是统一核心动效；当前只有 hover、弹窗和提示条等零散基础过渡，不能视为动效阶段已经完成。
+
 本轮使用的 UI 组件从 `../black-white-components/src/components/ui` 原样取用并放入应用自己的 `src/components/ui`。这是 shadcn/ui 的源码归属方式；组件库本身保持只读。
 
 ## 启动
