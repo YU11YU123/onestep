@@ -152,6 +152,7 @@ button[data-slot="button"].bg-primary { color: #fff; }
 .task-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: #8b8b85; font-size: 10px; }
 .task-meta > span { display: inline-flex; align-items: center; gap: 4px; }
 .task-meta svg { width: 11px; height: 11px; }
+.task-project-meta svg { transform: translateY(1px); }
 .task-meta .due { color: #a64a42; font-weight: 600; }
 .quadrant-dot::before { width: 5px; height: 5px; border-radius: 50%; background: currentColor; content: ""; }
 .q-critical { color: var(--critical) !important; }

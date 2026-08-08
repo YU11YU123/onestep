@@ -816,7 +816,7 @@ function TaskRow({
               <Clock /> {formatDateTimeDisplay(task.dueLabel)}
             </span>
           )}
-          <span><Folder /> {task.project}</span>
+          <span className="task-project-meta"><Folder /> {task.project}</span>
           <span className={`quadrant-dot q-${quadrantOf(task)}`}>{quadrant.label}</span>
         </div>
         {task.steps.length > 0 && !task.completed && (
