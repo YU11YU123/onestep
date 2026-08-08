@@ -1085,6 +1085,7 @@ function DateTimeWheel({
   const [date, setDate] = useState(parsed.date)
   const [hour, setHour] = useState(parsed.hour)
   const [minute, setMinute] = useState(parsed.minute)
+  const [calendarOpen, setCalendarOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -1107,6 +1108,7 @@ function DateTimeWheel({
             setDate(next.date)
             setHour(next.hour)
             setMinute(next.minute)
+            setCalendarOpen(false)
           }
           setOpen((current) => !current)
         }}
@@ -1120,7 +1122,26 @@ function DateTimeWheel({
             <div><Clock /><strong>{heading}</strong></div>
             <button onClick={() => { onChange(""); setOpen(false) }}>清除</button>
           </div>
-          <MonthCalendar label={label} value={date} onChange={setDate} />
+          <button
+            aria-label={`展开${label}日期`}
+            aria-expanded={calendarOpen}
+            className={calendarOpen ? "datetime-date-trigger active" : "datetime-date-trigger"}
+            onClick={() => setCalendarOpen((current) => !current)}
+          >
+            <span><CalendarDays />日期</span>
+            <strong>{date.replaceAll("-", "/")}</strong>
+            <ChevronDown />
+          </button>
+          {calendarOpen && (
+            <MonthCalendar
+              label={label}
+              value={date}
+              onChange={(nextDate) => {
+                setDate(nextDate)
+                setCalendarOpen(false)
+              }}
+            />
+          )}
           <div className="wheel-grid time-only">
             <WheelColumn label="小时" options={reminderHourOptions} value={hour} onChange={setHour} />
             <WheelColumn label="分钟" options={reminderMinuteOptions} value={minute} onChange={setMinute} />

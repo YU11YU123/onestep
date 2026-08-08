@@ -94,7 +94,10 @@ const evaluation = await send("Runtime.evaluate", {
     await wait(80);
     result.deadlinePickerOpened = Boolean(document.querySelector(".datetime-picker:not(.align-right) .wheel-popover")) && document.body.innerText.includes("设置截止时间");
     const deadlinePicker = document.querySelector(".datetime-picker:not(.align-right)");
+    deadlinePicker.querySelector('button[aria-label="展开截止时间日期"]')?.click();
+    await wait(60);
     deadlinePicker.querySelector('button[aria-label="截止时间日期 2026-08-15"]')?.click();
+    await wait(60);
     const deadlineWheels = deadlinePicker.querySelectorAll(".wheel-column");
     [...deadlineWheels[0].querySelectorAll("button")].find((button) => button.textContent.trim() === "18")?.click();
     [...deadlineWheels[1].querySelectorAll("button")].find((button) => button.textContent.trim() === "37")?.click();
@@ -107,7 +110,10 @@ const evaluation = await send("Runtime.evaluate", {
     await wait(80);
     result.reminderPickerOpened = Boolean(document.querySelector(".datetime-picker.align-right .wheel-popover")) && document.body.innerText.includes("设置提醒时间");
     const reminderPicker = document.querySelector(".datetime-picker.align-right");
+    reminderPicker.querySelector('button[aria-label="展开提醒时间日期"]')?.click();
+    await wait(60);
     reminderPicker.querySelector('button[aria-label="提醒时间日期 2026-08-15"]')?.click();
+    await wait(60);
     const reminderWheels = reminderPicker.querySelectorAll(".wheel-column");
     [...reminderWheels[0].querySelectorAll("button")].find((button) => button.textContent.trim() === "17")?.click();
     [...reminderWheels[1].querySelectorAll("button")].find((button) => button.textContent.trim() === "11")?.click();
@@ -220,6 +226,8 @@ await new Promise((resolve) => setTimeout(resolve, 120))
 const deadlineScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-deadline-picker.png", import.meta.url), Buffer.from(deadlineScreenshot.data, "base64"))
 await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="设置截止时间"]\')?.click(); document.querySelector(\'button[aria-label="设置提醒时间"]\')?.click()' })
+await new Promise((resolve) => setTimeout(resolve, 120))
+await send("Runtime.evaluate", { expression: 'document.querySelector(\'button[aria-label="展开提醒时间日期"]\')?.click()' })
 await new Promise((resolve) => setTimeout(resolve, 120))
 const reminderScreenshot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: false })
 writeFileSync(new URL("../artifacts/onestep-reminder-wheel.png", import.meta.url), Buffer.from(reminderScreenshot.data, "base64"))
