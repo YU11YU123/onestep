@@ -48,3 +48,12 @@ npm.cmd run dev
 - 没有安装包、云同步或手机端。
 
 完整交接状态见 `../PROGRESS.md`，下一步顺序见 `../开发顺序-大白话.md`。
+
+## 当前验证基线
+
+- `npm.cmd run typecheck`
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- 调试浏览器和本地页面就绪后运行 `node scripts/smoke-ui.mjs`：当前覆盖 36 项交互并生成 16 张验收截图。
+
+当前快捷记录创建的演示任务会自动带上第一个演示项目；正式需求要求收集箱项目可为空。这是已记录的原型偏差，不应直接带入本地持久化。
